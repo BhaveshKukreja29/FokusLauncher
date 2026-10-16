@@ -1,0 +1,13 @@
+Export and import your launcher configuration.
+
+Add app shortcuts to the drawer and find them in search.
+
+Save notes as Markdown files in a chosen folder and start fresh notes.
+
+Move home alignment to Look and feel. Keep music and Pomodoro widgets left aligned.
+
+Support OpenType fonts and restore imported custom fonts correctly.
+
+Correct screen-time totals and refresh every minute while home is active.
+
+Improve widget setup compatibility on Android 14 and newer.
