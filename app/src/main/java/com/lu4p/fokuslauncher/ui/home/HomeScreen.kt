@@ -59,8 +59,11 @@ import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import androidx.compose.ui.unit.Dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.appListStableKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
@@ -161,8 +164,16 @@ fun HomeScreen(
         viewModel.refreshWeather()
         viewModel.refreshMedia()
         viewModel.refreshNotificationIndicators()
-        viewModel.refreshScreenTime()
         viewModel.refreshArcticonsInstallState()
+    }
+
+    LaunchedEffect(lifecycleOwner, viewModel) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (true) {
+                viewModel.refreshScreenTime()
+                delay(60 * 1000L)
+            }
+        }
     }
 
     Box(modifier = modifier.fillMaxSize()) {

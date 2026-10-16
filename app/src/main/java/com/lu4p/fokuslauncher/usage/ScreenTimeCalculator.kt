@@ -1,9 +1,6 @@
 package com.lu4p.fokuslauncher.usage
 
-import android.app.usage.EventStats
 import android.app.usage.UsageEvents
-import android.os.Build
-import androidx.annotation.RequiresApi
 
 /**
  * Computes screen-on duration from [UsageEvents.Event.SCREEN_INTERACTIVE] /
@@ -33,6 +30,7 @@ internal fun computeScreenOnTimeMs(
 ): Long {
     if (windowEnd <= windowStart) return 0L
     var screenOnSince: Long? = null
+    var screenStateKnown = false
     var totalMs = 0L
 
     for ((eventType, timeStamp) in events) {
@@ -41,11 +39,25 @@ internal fun computeScreenOnTimeMs(
                 if (screenOnSince == null) {
                     screenOnSince = timeStamp.coerceIn(windowStart, windowEnd)
                 }
+                screenStateKnown = true
             }
-            UsageEvents.Event.SCREEN_NON_INTERACTIVE,
+            UsageEvents.Event.SCREEN_NON_INTERACTIVE -> {
+                // Only the first screen-off event may close a session that began
+                // before the window. Later unmatched events must not count it again.
+                val start = screenOnSince ?: windowStart.takeUnless { screenStateKnown }
+                totalMs += closeOpenScreenOnSegment(start, timeStamp, windowStart, windowEnd)
+                screenOnSince = null
+                screenStateKnown = true
+            }
             UsageEvents.Event.DEVICE_SHUTDOWN -> {
                 totalMs += closeOpenScreenOnSegment(screenOnSince, timeStamp, windowStart, windowEnd)
                 screenOnSince = null
+                screenStateKnown = true
+            }
+            UsageEvents.Event.DEVICE_STARTUP -> {
+                // A restart without a recorded shutdown leaves the closing time unknown.
+                screenOnSince = null
+                screenStateKnown = true
             }
         }
     }
@@ -54,26 +66,8 @@ internal fun computeScreenOnTimeMs(
         totalMs +=
                 (windowEnd - it.coerceIn(windowStart, windowEnd)).coerceAtLeast(0L)
     }
-    return totalMs.coerceAtLeast(0L)
+    return totalMs.coerceIn(0L, windowEnd - windowStart)
 }
-
-/** Screen-on time from aggregated event stats (API 28+). */
-internal fun screenOnTimeFromEventStats(eventStats: List<EventStats>?): Long {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return 0L
-    return screenOnTimeFromEventStatsApi28(eventStats)
-}
-
-@RequiresApi(Build.VERSION_CODES.P)
-private fun screenOnTimeFromEventStatsApi28(eventStats: List<EventStats>?): Long {
-    if (eventStats.isNullOrEmpty()) return 0L
-    return eventStats
-            .asSequence()
-            .filter { it.eventType == UsageEvents.Event.SCREEN_INTERACTIVE }
-            .sumOf { it.totalTime }
-}
-
-internal fun supportsScreenInteractiveEvents(): Boolean =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
 
 private fun closeOpenScreenOnSegment(
         screenOnSince: Long?,
@@ -81,7 +75,8 @@ private fun closeOpenScreenOnSegment(
         windowStart: Long,
         windowEnd: Long,
 ): Long {
+    if (screenOnSince == null) return 0L
     val end = segmentEnd.coerceIn(windowStart, windowEnd)
-    val start = (screenOnSince ?: windowStart).coerceIn(windowStart, windowEnd)
+    val start = screenOnSince.coerceIn(windowStart, windowEnd)
     return (end - start).coerceAtLeast(0L)
 }

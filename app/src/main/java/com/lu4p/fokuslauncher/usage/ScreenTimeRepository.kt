@@ -2,7 +2,6 @@ package com.lu4p.fokuslauncher.usage
 
 import android.app.usage.UsageStatsManager
 import android.content.Context
-import android.os.Build
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,22 +17,8 @@ class ScreenTimeRepository @Inject constructor(@param:ApplicationContext private
         val end = System.currentTimeMillis()
         val start = end - TWENTY_FOUR_HOURS_MS
 
-        if (supportsScreenInteractiveEvents()) {
-            return computeScreenOnTimeMs(usageStatsManager.queryEvents(start, end), start, end)
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            val fromStats =
-                    screenOnTimeFromEventStats(
-                            usageStatsManager.queryEventStats(
-                                    UsageStatsManager.INTERVAL_BEST,
-                                    start,
-                                    end,
-                            )
-                    )
-            if (fromStats > 0L) return fromStats
-        }
-
+        // Individual screen events are available from Android 9. Aggregated event stats
+        // can expand the requested range to whole days, so they cannot give a rolling total.
         return computeScreenOnTimeMs(usageStatsManager.queryEvents(start, end), start, end)
     }
 

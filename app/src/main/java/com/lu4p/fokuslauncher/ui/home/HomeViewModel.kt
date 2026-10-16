@@ -371,7 +371,6 @@ class HomeViewModel @Inject constructor(
             preferencesManager.preferredCalendarTapFlow.stateEagerlyIn(viewModelScope, null)
 
     private var weatherTickerJob: Job? = null
-    private var screenTimeTickerJob: Job? = null
 
     private val batteryChangedReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctx: Context?, intent: Intent?) {
@@ -454,7 +453,6 @@ class HomeViewModel @Inject constructor(
         }
         weatherTickerJob?.cancel()
         worldClockWeatherFetchJob?.cancel()
-        screenTimeTickerJob?.cancel()
         mediaRepository.stop()
         notificationIndicatorRepository.setTrackingEnabled(
                 NotificationIndicatorRepository.CONSUMER_HOME,
@@ -1296,32 +1294,25 @@ class HomeViewModel @Inject constructor(
 
     // ── Screen time widget ──────────────────────────────────────────
 
-    private var screenTimeEnabled = false
-
     private fun observeScreenTime() {
         observeFlow(preferencesManager.showHomeScreenTimeFlow) { enabled ->
             if (!enabled) {
-                screenTimeEnabled = false
-                stopScreenTimeTicker()
                 _screenTimeUiState.value = HomeScreenTimeUiState()
             } else {
-                refreshScreenTime(startTickerIfEnabled = true)
+                refreshScreenTime()
             }
         }
     }
 
-    fun refreshScreenTime(startTickerIfEnabled: Boolean = false) {
+    fun refreshScreenTime() {
         viewModelScope.launch(Dispatchers.IO) {
             val prefEnabled = preferencesManager.showHomeScreenTimeFlow.first()
             if (!prefEnabled) {
-                screenTimeEnabled = false
                 _screenTimeUiState.value = HomeScreenTimeUiState()
                 return@launch
             }
-            screenTimeEnabled = UsageStatsHelper.hasUsageAccess(context)
-            if (!screenTimeEnabled) {
+            if (!UsageStatsHelper.hasUsageAccess(context)) {
                 _screenTimeUiState.value = HomeScreenTimeUiState()
-                stopScreenTimeTicker()
                 return@launch
             }
             val totalMs = screenTimeRepository.queryLast24HoursTotalMs() ?: 0L
@@ -1330,7 +1321,6 @@ class HomeViewModel @Inject constructor(
                             enabled = true,
                             durationText = formatScreenTimeDuration(totalMs),
                     )
-            if (startTickerIfEnabled) startScreenTimeTicker()
         }
     }
 
@@ -1343,21 +1333,6 @@ class HomeViewModel @Inject constructor(
                     )
                     .show()
         }
-    }
-
-    private fun startScreenTimeTicker() {
-        if (screenTimeTickerJob?.isActive == true) return
-        screenTimeTickerJob = viewModelScope.launch(Dispatchers.IO) {
-            while (true) {
-                delay(15 * 60 * 1000L)
-                refreshScreenTime()
-            }
-        }
-    }
-
-    private fun stopScreenTimeTicker() {
-        screenTimeTickerJob?.cancel()
-        screenTimeTickerJob = null
     }
 
     // ── Note widget ─────────────────────────────────────────────────

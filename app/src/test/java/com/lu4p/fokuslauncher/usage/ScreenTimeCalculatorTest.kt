@@ -79,5 +79,90 @@ class ScreenTimeCalculatorTest {
         )
     }
 
+    @Test
+    fun computeScreenOnTimeMs_screenOffThenShutdownDoesNotCountThirtyHours() {
+        val hour = 60 * 60 * 1_000L
+        assertEquals(
+                8 * hour,
+                computeScreenOnTimeMs(
+                        events(
+                                UsageEvents.Event.SCREEN_NON_INTERACTIVE to 8 * hour,
+                                UsageEvents.Event.DEVICE_SHUTDOWN to 22 * hour,
+                        ),
+                        windowStart = 0L,
+                        windowEnd = 24 * hour,
+                ),
+        )
+    }
+
+    @Test
+    fun computeScreenOnTimeMs_duplicateScreenOffEventsAreIgnored() {
+        assertEquals(
+                5_000L,
+                computeScreenOnTimeMs(
+                        events(
+                                UsageEvents.Event.SCREEN_NON_INTERACTIVE to 2_000L,
+                                UsageEvents.Event.SCREEN_NON_INTERACTIVE to 3_000L,
+                                UsageEvents.Event.SCREEN_INTERACTIVE to 5_000L,
+                                UsageEvents.Event.SCREEN_INTERACTIVE to 6_000L,
+                                UsageEvents.Event.SCREEN_NON_INTERACTIVE to 8_000L,
+                                UsageEvents.Event.SCREEN_NON_INTERACTIVE to 9_000L,
+                        ),
+                        windowStart = 0L,
+                        windowEnd = 10_000L,
+                ),
+        )
+    }
+
+    @Test
+    fun computeScreenOnTimeMs_shutdownWithoutOpenSessionDoesNotInferScreenOn() {
+        assertEquals(
+                0L,
+                computeScreenOnTimeMs(
+                        events(UsageEvents.Event.DEVICE_SHUTDOWN to 6_000L),
+                        windowStart = 0L,
+                        windowEnd = 10_000L,
+                ),
+        )
+    }
+
+    @Test
+    fun computeScreenOnTimeMs_restartDiscardsSessionWithUnknownEnd() {
+        assertEquals(
+                2_000L,
+                computeScreenOnTimeMs(
+                        events(
+                                UsageEvents.Event.SCREEN_INTERACTIVE to 1_000L,
+                                UsageEvents.Event.DEVICE_STARTUP to 5_000L,
+                                UsageEvents.Event.SCREEN_NON_INTERACTIVE to 6_000L,
+                                UsageEvents.Event.SCREEN_INTERACTIVE to 7_000L,
+                                UsageEvents.Event.SCREEN_NON_INTERACTIVE to 9_000L,
+                        ),
+                        windowStart = 0L,
+                        windowEnd = 10_000L,
+                ),
+        )
+    }
+
+    @Test
+    fun computeScreenOnTimeMs_startupDoesNotInferScreenOnBeforeBoot() {
+        assertEquals(
+                0L,
+                computeScreenOnTimeMs(
+                        events(
+                                UsageEvents.Event.DEVICE_STARTUP to 5_000L,
+                                UsageEvents.Event.SCREEN_NON_INTERACTIVE to 6_000L,
+                        ),
+                        windowStart = 0L,
+                        windowEnd = 10_000L,
+                ),
+        )
+    }
+
+    @Test
+    fun computeScreenOnTimeMs_emptyEventsDoNotInferScreenOn() {
+        assertEquals(0L, computeScreenOnTimeMs(emptyList(), 0L, 10_000L))
+    }
+
     private fun events(vararg entries: Pair<Int, Long>) = entries.toList()
 }
