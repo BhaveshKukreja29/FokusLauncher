@@ -29,7 +29,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.media.MediaCustomActionButton
-import com.lu4p.fokuslauncher.ui.home.HomeWidgetAlignment
 import com.lu4p.fokuslauncher.ui.home.WidgetControlIconBaseSizeDp
 import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
 
@@ -51,7 +50,6 @@ fun MediaWidget(
         canSkipToNext: Boolean,
         like: MediaCustomActionButton? = null,
         save: MediaCustomActionButton? = null,
-        alignment: HomeWidgetAlignment = HomeWidgetAlignment.START,
         modifier: Modifier = Modifier,
         outlined: Boolean = false,
         onOpenApp: () -> Unit = {},
@@ -66,22 +64,8 @@ fun MediaWidget(
     val artistStyle = MaterialTheme.typography.bodyMedium
     val showArtist = !artist.isNullOrBlank() && !artist.equals(title, ignoreCase = true)
     val iconSize = WidgetControlIconBaseSizeDp.dp
-    val horizontalAlignment =
-            when (alignment) {
-                HomeWidgetAlignment.START -> Alignment.Start
-                HomeWidgetAlignment.CENTER -> Alignment.CenterHorizontally
-                HomeWidgetAlignment.END -> Alignment.End
-            }
-
-    val textAlign =
-            when (alignment) {
-                HomeWidgetAlignment.START -> TextAlign.Start
-                HomeWidgetAlignment.CENTER -> TextAlign.Center
-                HomeWidgetAlignment.END -> TextAlign.End
-            }
-
     Column(
-            horizontalAlignment = horizontalAlignment,
+            horizontalAlignment = Alignment.Start,
             modifier = modifier.testTag("media_widget"),
     ) {
         Column(
@@ -94,7 +78,7 @@ fun MediaWidget(
                     style = titleStyle,
                     color = color,
                     outlined = outlined,
-                    textAlign = textAlign,
+                    textAlign = TextAlign.Start,
                     modifier = Modifier.testTag("media_title"),
             )
             if (showArtist) {
@@ -103,7 +87,7 @@ fun MediaWidget(
                         style = artistStyle,
                         color = color.copy(alpha = 0.78f),
                         outlined = outlined,
-                        textAlign = textAlign,
+                        textAlign = TextAlign.Start,
                         modifier =
                                 Modifier.testTag("media_artist").padding(top = 2.dp),
                 )
@@ -111,7 +95,7 @@ fun MediaWidget(
         }
         Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp, horizontalAlignment),
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.Start),
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
         ) {
                 val previousColor = if (canSkipToPrevious) color else color.copy(alpha = 0.38f)

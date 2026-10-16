@@ -25,7 +25,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.PomodoroMode
-import com.lu4p.fokuslauncher.ui.home.HomeWidgetAlignment
 import com.lu4p.fokuslauncher.ui.home.WidgetControlIconBaseSizeDp
 import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
 
@@ -41,7 +40,6 @@ fun PomodoroWidget(
         isRunning: Boolean,
         awaitingDismiss: Boolean,
         mode: PomodoroMode,
-        alignment: HomeWidgetAlignment = HomeWidgetAlignment.START,
         modifier: Modifier = Modifier,
         outlined: Boolean = false,
         onPlayPause: () -> Unit = {},
@@ -54,20 +52,13 @@ fun PomodoroWidget(
     val modeStyle = MaterialTheme.typography.bodyMedium
     val iconSize = WidgetControlIconBaseSizeDp.dp
     val muted = color.copy(alpha = 0.38f)
-    val horizontalAlignment =
-            when (alignment) {
-                HomeWidgetAlignment.START -> Alignment.Start
-                HomeWidgetAlignment.CENTER -> Alignment.CenterHorizontally
-                HomeWidgetAlignment.END -> Alignment.End
-            }
-
     Column(
-            horizontalAlignment = horizontalAlignment,
+            horizontalAlignment = Alignment.Start,
             modifier = modifier.testTag("pomodoro_widget"),
     ) {
         Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp, horizontalAlignment),
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start),
                 modifier = Modifier.fillMaxWidth(),
         ) {
             PomodoroModeLabel(
@@ -100,7 +91,7 @@ fun PomodoroWidget(
         }
         Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(32.dp, horizontalAlignment),
+                horizontalArrangement = Arrangement.spacedBy(32.dp, Alignment.Start),
                 modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
         ) {
             LauncherIcon(

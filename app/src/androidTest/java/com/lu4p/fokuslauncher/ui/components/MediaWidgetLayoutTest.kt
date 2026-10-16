@@ -6,7 +6,6 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
-import com.lu4p.fokuslauncher.ui.home.HomeWidgetAlignment
 import com.lu4p.fokuslauncher.ui.theme.FokusLauncherTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -18,7 +17,7 @@ class MediaWidgetLayoutTest {
     @get:Rule val composeTestRule = createComposeRule()
 
     @Test
-    fun centeredAlignmentCentersTransportControls() {
+    fun transportControlsStayLeftAligned() {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 MediaWidget(
@@ -27,7 +26,6 @@ class MediaWidgetLayoutTest {
                     isPlaying = true,
                     canSkipToPrevious = true,
                     canSkipToNext = true,
-                    alignment = HomeWidgetAlignment.CENTER,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -35,11 +33,7 @@ class MediaWidgetLayoutTest {
 
         val widget = composeTestRule.onNodeWithTag("media_widget").getUnclippedBoundsInRoot()
         val previous = composeTestRule.onNodeWithTag("media_previous").getUnclippedBoundsInRoot()
-        val next = composeTestRule.onNodeWithTag("media_next").getUnclippedBoundsInRoot()
-        val controlsCenter = (previous.left + next.right) / 2f
-
-        val widgetCenter = (widget.left + widget.right) / 2f
-        assertEquals(widgetCenter.value, controlsCenter.value, 1f)
+        assertEquals(widget.left.value, previous.left.value, 1f)
     }
 
     @Test
