@@ -1,11 +1,13 @@
 package com.lu4p.fokuslauncher
 
 import android.app.Activity
+import android.app.ActivityOptions
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetManager
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import com.lu4p.fokuslauncher.data.widget.WidgetHostManager
@@ -28,6 +30,22 @@ internal fun launchWidgetConfiguration(launch: () -> Unit): WidgetConfigurationL
         } catch (_: IllegalArgumentException) {
             WidgetConfigurationLaunchResult.STALE_BINDING
         }
+
+internal fun widgetConfigurationActivityOptions(): ActivityOptions? {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return null
+
+    // AppWidgetHost uses a system-created IntentSender. Android 14+ requires the sender
+    // to opt in to lend its activity-start privileges to this user-requested launch.
+    val mode =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_IF_VISIBLE
+            } else {
+                @Suppress("DEPRECATION") // Required on Android 14/15; the visible-only mode is API 36+.
+                ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+            }
+    return ActivityOptions.makeBasic()
+            .setPendingIntentBackgroundActivityStartMode(mode)
+}
 
 /**
  * Starts widget configuration through [AppWidgetHost], then forwards the provider's result to the
@@ -60,7 +78,7 @@ class WidgetConfigurationActivity : Activity() {
                                 appWidgetId,
                                 0,
                                 REQUEST_CONFIGURE,
-                                null,
+                                widgetConfigurationActivityOptions()?.toBundle(),
                         )
             }
             Log.i(TAG, "Widget configuration launch: $launchResult, id=$appWidgetId")
