@@ -1790,11 +1790,7 @@ class HomeViewModel @Inject constructor(
                 return
             }
             val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-            @Suppress("MissingPermission")
-            val liveLocation =
-                    locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-                            ?: locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                            ?: locationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER)
+            val liveLocation = WeatherLocationSource(locationManager).getLocation()
             if (liveLocation != null) {
                 preferencesManager.setLastKnownWeatherLocation(
                         liveLocation.latitude,
@@ -1819,6 +1815,8 @@ class HomeViewModel @Inject constructor(
                             showWeatherWidget = true
                     )
             applyWeatherUiState(updated)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (_: Exception) { }
     }
 
